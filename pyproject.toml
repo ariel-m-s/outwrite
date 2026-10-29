@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "outwrite"
-version = "0.1.0a2"
+version = "0.1.0a3"
 description = "Python logs and live status updates, shared across processes."
 readme = "README.md"
 requires-python = ">=3.11"

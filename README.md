@@ -9,7 +9,7 @@ Requires Python 3.11+. Currently in alpha.
 ## Install
 
 ```sh
-python -m pip install outwrite==0.1.0a2
+python -m pip install outwrite==0.1.0a3
 ```
 
 ## Quick start
@@ -18,15 +18,16 @@ Use a standard Python logger and update the status as you work:
 
 ```python
 import logging
-from outwrite import setup_output, status
+
+import outwrite
 
 logger = logging.getLogger("my_app")
 
-with setup_output(logger=logger):
+with outwrite.configure_console(logger=logger):
     logger.info("Starting")
-    status.update("Processing files")
+    outwrite.status.update("Processing files")
     # Do your work here.
-    status.clear()
+    outwrite.status.clear()
     logger.info("Done")
 ```
 
@@ -35,41 +36,44 @@ Logs appear above the status line. Cleanup happens automatically when the
 
 ## Multiple processes
 
-Pass the output connection to each worker and call `setup_output(output)` there:
+Pass the console connection to each worker and configure it there:
 
 ```python
 import logging
 import multiprocessing as mp
-from outwrite import setup_output, status
+
+import outwrite
 
 logger = logging.getLogger("my_app")
 
-def work(output):
-    setup_output(output)
+def work(console_connection: outwrite.ConsoleConnection):
+    outwrite.configure_console(console_connection)
     logger.info("Worker started")
-    status.update("Processing files")
+    outwrite.status.update("Processing files")
     # Do your work here.
     logger.info("Worker finished")
 
 if __name__ == "__main__":
     ctx = mp.get_context("spawn")
-    with setup_output(logger=logger, mp_context=ctx) as output:
-        process = ctx.Process(target=work, args=(output,))
+    with outwrite.configure_console(logger=logger, mp_context=ctx) as console_connection:
+        process = ctx.Process(target=work, args=(console_connection,))
         process.start()
         process.join()
 ```
 
 Join workers before leaving the `with` block. Use the same named logger in the
-parent and workers. Threads can use the configured logger and `status` directly.
+parent and workers. Threads can use the configured logger and `outwrite.status` directly.
 
 See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
 
 ## Options
 
-- `level=logging.DEBUG` includes debug logs.
+- `console_level=logging.DEBUG` includes debug logs in the console, without
+  changing existing file handlers.
 - `show_status=False` hides the status line without hiding logs.
-- `status.clear()` clears the line so it can be used again.
-- `status.stop()` immediately hides status in the parent for the rest of the session.
+- `outwrite.status.clear()` clears the line so it can be used again.
+- `outwrite.status.disable()` immediately hides status in the parent and ignores further
+  updates for the rest of the session.
 
 Output goes to stderr. Outside a terminal, logs still appear but the status line
 is hidden.
@@ -80,9 +84,9 @@ Pass `console_handler=your_rich_handler` to use your own RichHandler formatting,
 console, and log level. Existing handlers still receive logs; a supplied console
 handler is not added twice or closed by Outwrite.
 
-For custom status styling, pass `status_renderer=format_status`, where
-`format_status(text, console)` returns a Rich renderable. Both options are
-parent-only; workers still call `setup_output(output)` without customization.
+For custom status styling, pass `render_status=your_status_renderer`, where
+`your_status_renderer(text, console)` returns a Rich renderable. Both options are
+parent-only; workers call `outwrite.configure_console(console_connection)` without customization.
 
 ## License
 

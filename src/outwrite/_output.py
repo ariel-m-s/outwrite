@@ -21,8 +21,8 @@ from rich.live import Live
 from rich.logging import RichHandler
 from rich.text import Text
 
-_connection: OutputConnection | None = None
-_session: _OutputSession | None = None
+_connection: ConsoleConnection | None = None
+_session: _ConsoleSession | None = None
 
 
 class _Status:
@@ -33,20 +33,20 @@ class _Status:
         if text is not None and not isinstance(text, str):
             raise TypeError("Status text must be a string or None.")
         if _connection is None:
-            raise RuntimeError("Call setup_output() before updating status.")
+            raise RuntimeError("Call configure_console() before updating status.")
         if _connection._show_status:
             _connection._queue.put("" if text is None else text)
 
     def clear(self) -> None:
-        """Clear the status line without ending the output session."""
+        """Clear the status line without ending the console session."""
         self.update(None)
 
-    def stop(self) -> None:
+    def disable(self) -> None:
         """Immediately clear parent status and ignore further updates for this session."""
         if _session is None:
-            raise RuntimeError("Only the parent can stop the status display.")
+            raise RuntimeError("Only the parent can disable the status display.")
         with _session.render_lock:
-            _session.status_stopped = True
+            _session.status_disabled = True
             _session.live.stop()
 
 
@@ -54,7 +54,7 @@ status = _Status()
 
 
 @dataclass(frozen=True)
-class OutputConnection:
+class ConsoleConnection:
     """Pass this handle to workers; use it as a context manager in the parent."""
 
     _queue: Queue
@@ -62,15 +62,16 @@ class OutputConnection:
     _show_status: bool
     _parent_pid: int
 
-    def __enter__(self) -> OutputConnection:
+    def __enter__(self) -> ConsoleConnection:
         if os.getpid() != self._parent_pid:
             raise RuntimeError(
-                "Only the parent owns the output context; use setup_output(output) in workers."
+                "Only the parent owns the console context; "
+                "use configure_console(console_connection) in workers."
             )
         if _session is None or _session.connection is not self:
-            raise RuntimeError("This output session is no longer active.")
+            raise RuntimeError("This console session is no longer active.")
         if _session.entered:
-            raise RuntimeError("An output context cannot be nested.")
+            raise RuntimeError("A console context cannot be nested.")
         _session.entered = True
         return self
 
@@ -81,30 +82,30 @@ class OutputConnection:
         exc_traceback: TracebackType | None,
     ) -> None:
         if _session is None or _session.connection is not self:
-            raise RuntimeError("This output session is no longer active.")
+            raise RuntimeError("This console session is no longer active.")
         _session.close()
 
 
-class _OutputSession:
+class _ConsoleSession:
     """Own everything that must remain in the rendering process."""
 
     def __init__(
         self,
-        connection: OutputConnection,
+        console_connection: ConsoleConnection,
         logger: logging.Logger,
         console: Console,
-        level: int,
+        console_level: int,
         console_handler: RichHandler | None,
-        status_renderer: Callable[[str, Console], ConsoleRenderable] | None,
+        render_status: Callable[[str, Console], ConsoleRenderable] | None,
     ) -> None:
-        self.connection = connection
+        self.connection = console_connection
         self.logger = logger
         self.console = console
         self.previous_handlers = logger.handlers[:]
         self.previous_level = logger.level
         self.previous_propagate = logger.propagate
         self.console_handler = console_handler or RichHandler(
-            console=console, level=level
+            console=console, level=console_level
         )
         self.owns_console_handler = console_handler is None
         self.handlers = [
@@ -112,10 +113,10 @@ class _OutputSession:
             for handler in self.previous_handlers
             if handler is not self.console_handler
         ] + [self.console_handler]
-        self.status_renderer = status_renderer
-        self.status_stopped = False
+        self.render_status = render_status
+        self.status_disabled = False
         self.render_lock = threading.RLock()
-        self.queue_handler = QueueHandler(connection._queue)
+        self.queue_handler = QueueHandler(console_connection._queue)
         self.live = Live(
             console=console,
             transient=True,
@@ -147,8 +148,8 @@ class _OutputSession:
                                 handler.handle(message)
                     elif not message:
                         self.live.stop()
-                    elif not self.status_stopped:
-                        if self.status_renderer is None:
+                    elif not self.status_disabled:
+                        if self.render_status is None:
                             text = Text(
                                 message, style="cyan", no_wrap=True, overflow="ellipsis"
                             )
@@ -157,7 +158,7 @@ class _OutputSession:
                             )
                             content = text
                         else:
-                            content = self.status_renderer(message, self.console)
+                            content = self.render_status(message, self.console)
                         self.live.update(content, refresh=self.live.is_started)
                         if not self.live.is_started:
                             self.live.start(refresh=True)
@@ -190,46 +191,51 @@ class _OutputSession:
             ) from self.error
 
 
-def setup_output(
-    connection: OutputConnection | None = None,
+def configure_console(
+    console_connection: ConsoleConnection | None = None,
     *,
     logger: logging.Logger | None = None,
-    level: int = logging.INFO,
+    console_level: int = logging.INFO,
     show_status: bool = True,
     mp_context: BaseContext | None = None,
     console_handler: RichHandler | None = None,
-    status_renderer: Callable[[str, Console], ConsoleRenderable] | None = None,
-) -> OutputConnection:
-    """Start a parent session, or connect a worker to the parent's session.
+    render_status: Callable[[str, Console], ConsoleRenderable] | None = None,
+) -> ConsoleConnection:
+    """Configure console logging and status, or connect to the parent's console.
 
-    Parent usage: ``with setup_output(logger=my_logger) as output: ...``.
+    Parent usage: ``with outwrite.configure_console(logger=my_logger) as console_connection: ...``.
     Join workers and logging threads before leaving the block.
-    Worker usage: ``setup_output(output)`` before logging or updating status.
+    Worker usage: ``outwrite.configure_console(console_connection)`` before logging or status.
     Worker configuration comes from the connection, not the keyword options.
+    console_level filters the default console handler, not existing handlers.
     A custom RichHandler supplies the shared console and keeps its own level.
-    status_renderer(text, console) formats status in the parent only.
+    render_status(text, console) returns a Rich renderable in the parent only.
     """
     global _connection, _session
     if _connection is not None:
-        raise RuntimeError("Output is already configured in this process.")
-    if connection is not None:
-        if connection._parent_pid == os.getpid():
+        raise RuntimeError(
+            "Console logging and status are already configured in this process."
+        )
+    if console_connection is not None:
+        if console_connection._parent_pid == os.getpid():
             raise RuntimeError(
                 "The parent is already responsible for rendering this connection."
             )
-        worker_logger = logging.getLogger(connection._logger_name)
-        worker_logger.handlers = [QueueHandler(connection._queue)]
+        worker_logger = logging.getLogger(console_connection._logger_name)
+        worker_logger.handlers = [QueueHandler(console_connection._queue)]
         worker_logger.setLevel(logging.DEBUG)
         worker_logger.propagate = False
-        _connection = connection
-        return connection
+        _connection = console_connection
+        return console_connection
 
     if logger is None:
         logger = logging.getLogger("outwrite")
     if logger is logging.getLogger():
         raise ValueError("Choose a named logger, not the root logger.")
-    if not isinstance(level, int):
-        raise TypeError("level must be an integer logging level, such as logging.INFO.")
+    if not isinstance(console_level, int):
+        raise TypeError(
+            "console_level must be an integer logging level, such as logging.INFO."
+        )
     context = mp_context if mp_context is not None else mp.get_context("spawn")
     if context.get_start_method() == "fork":
         raise ValueError("Use a spawn or forkserver multiprocessing context, not fork.")
@@ -237,20 +243,25 @@ def setup_output(
     console = (
         console_handler.console if console_handler is not None else Console(stderr=True)
     )
-    connection = OutputConnection(
+    console_connection = ConsoleConnection(
         context.Queue(), logger.name, show_status and console.is_terminal, os.getpid()
     )
-    session = _OutputSession(
-        connection, logger, console, level, console_handler, status_renderer
+    session = _ConsoleSession(
+        console_connection,
+        logger,
+        console,
+        console_level,
+        console_handler,
+        render_status,
     )
     logger.handlers = [session.queue_handler]
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
-    _connection = connection
+    _connection = console_connection
     _session = session
     session.listener.start()
     atexit.register(_cleanup_at_exit)
-    return connection
+    return console_connection
 
 
 def _cleanup_at_exit() -> None:
