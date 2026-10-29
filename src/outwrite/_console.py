@@ -1,4 +1,4 @@
-"""Parent rendering and worker connections."""
+"""Console logging, live status, and worker connections."""
 
 from __future__ import annotations
 
