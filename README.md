@@ -17,8 +17,7 @@ Processing file 3 of 5
 Show progress without printing a new line for every update. All processes share
 the same status line; each update replaces it.
 
-Use it for file conversion, data processing, or other command-line work.
-Keep important events in your logs and show progress on the status line:
+Keep important events in your logs and show what you're doing on the status line:
 
 ```text
 Logs:    "Starting"         "Finished file 1"         "Finished file 2"
