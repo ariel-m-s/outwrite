@@ -1,7 +1,8 @@
 # Outwrite
 
-Python logging and a live status line that work together, across threads and
-processes. Built on [Rich](https://github.com/Textualize/rich).
+Python logs and live status updates, shared across processes.
+
+Built on [Rich](https://github.com/Textualize/rich).
 
 Requires Python 3.11+. Currently in alpha.
 
