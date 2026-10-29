@@ -1,31 +1,23 @@
 # Outwrite
 
-Python logs and live status updates, shared across processes.
+Keep your logs readable and your progress visible.
 
-Use Outwrite when your program needs to print logs while showing what it is
-currently doing, without mixing up terminal output from threads or worker
-processes. Keep using Python's standard `logging`; Outwrite routes logs and status
-updates through one renderer in the parent process.
+Outwrite combines Python's standard logging with one live **status line**:
+text that updates in place to show what your program is doing.
+Logs stay above it, even when they come from different threads or processes.
 
-A **status line** is a single line of text that updates in place, rather than
-adding a new log entry each time. Use it for progress, the current task, or the
-time of the last save. All workers share the same line; each update replaces it.
-
-For example, while processing files, your terminal might look like this
-(colors omitted):
+For example:
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
-[10/30/26 12:00:02] INFO     Finished a batch                  app.py:14
+[10/30/26 12:00:02] INFO     Finished a batch                 app.py:14
 Processing file 12 of 20
 ```
 
-The last line changes as work progresses. New logs appear above it, and the
-status line disappears when the output context closes.
+Update progress without filling your logs. Workers share the same status line;
+each update replaces it. The line disappears when you're done.
 
-Built on [Rich](https://github.com/Textualize/rich).
-
-Requires Python 3.11+. Currently in alpha.
+Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
 
 ## Install
 
