@@ -8,9 +8,11 @@ Logs stay above it, even when they come from different threads or processes.
 
 Log messages stay in the output. The status line changes in place:
 
-> [10/30/26 12:00:00] INFO Starting<br>
-> [10/30/26 12:00:02] INFO Finished file 2<br>
-> Processing file 3 of 5
+```text
+[10/30/26 12:00:00] INFO     Starting                         app.py:10
+[10/30/26 12:00:02] INFO     Finished file 2                  app.py:14
+Processing file 3 of 5
+```
 
 The last line might change to “Processing file 4 of 5” without adding another
 line. Status is text you provide, not an automatically calculated progress bar.
