@@ -60,10 +60,10 @@ handler, it continues to receive log messages, but not status updates.
 
 Pass these options to `outwrite.configure_console(...)`:
 
-| Option | What it does |
-| --- | --- |
-| `console_level=logging.DEBUG` | Show debug messages too. The default is `logging.INFO`. Existing log files keep their own settings. |
-| `show_status=False` | Hide status but keep showing logs. |
+| Option | Default | What it does |
+| --- | --- | --- |
+| `console_level` | `logging.INFO` | Minimum log level shown by the default console handler. Accepts integer logging levels, including custom levels. Existing handlers keep their own levels. |
+| `show_status` | `True` | Whether to show the status line. Does not affect logs. |
 
 You can also control the status line while working:
 
