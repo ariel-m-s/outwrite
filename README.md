@@ -6,7 +6,7 @@ Outwrite combines Python's standard logging with one live **status line**:
 text that updates in place to show what your program is doing.
 Logs stay above it, even when they come from different threads or processes.
 
-For example:
+Think **"what happened"** above, **"what's happening now"** below:
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
@@ -17,7 +17,19 @@ Processing file 12 of 20
 Update progress without filling your logs. All processes share the same status
 line; each update replaces it. The line disappears when the `with` block ends.
 
-Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
+Use it for a file converter, a batch job, or a command-line tool that spends a
+while working. Keep the milestones in your logs and the running count in status:
+
+```text
+Processing file 1 of 20  ->  Processing file 2 of 20  ->  ...
+                     same line, updated in place
+```
+
+No separate progress bars or numbered tasks to manage: status is just text you
+choose. Outwrite coordinates the output; [Rich](https://github.com/Textualize/rich)
+handles how it looks.
+
+Python 3.11+. Currently in alpha.
 
 ## Install
 
@@ -27,10 +39,11 @@ python -m pip install outwrite==0.1.0a3
 
 ## Quick start
 
-Use a standard Python logger and update the status as you work:
+Try this small example to see the status change while logs appear:
 
 ```python
 import logging
+import time
 
 import outwrite
 
@@ -38,20 +51,32 @@ logger = logging.getLogger("my_app")
 
 with outwrite.configure_console(logger=logger):
     logger.info("Starting")
-    outwrite.status.update("Processing files")
-    # Do your work here.
-    outwrite.status.clear()
+    for number in range(1, 6):
+        outwrite.status.update(f"Processing file {number} of 5")
+        time.sleep(0.5)  # Your work goes here.
+        logger.info("Finished file %s", number)
     logger.info("Done")
 ```
 
 Logs appear above the status line. Outwrite finishes printing queued messages
 and clears the status line when the `with` block ends.
 
+Use `logger.info(...)`, `logger.warning(...)`, and the other logging methods as
+usual. Call `outwrite.status.update(...)` whenever the current task changes.
+Each log stays in the output; status is temporary.
+
 ## Multiple processes
 
+More workers shouldn't mean a messier terminal.
 The main process displays the logs and status. Pass the connection returned by
 `outwrite.configure_console()` to each worker process, then call the same
 function there:
+
+```text
+Main process -----+
+Worker A ---------+--> Main process displays --> Logs + one status line
+Worker B ---------+
+```
 
 ```python
 import logging
@@ -82,6 +107,9 @@ The example uses the same multiprocessing context to create the connection and
 worker, so they work together.
 
 Threads need no extra setup: use the logger and `outwrite.status` directly.
+
+There is one shared status line, not one per worker. If several workers update
+it, the last update received is the one shown.
 
 See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
 
