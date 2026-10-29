@@ -14,8 +14,8 @@ For example:
 Processing file 12 of 20
 ```
 
-Update progress without filling your logs. Workers share the same status line;
-each update replaces it. The line disappears when you're done.
+Update progress without filling your logs. All processes share the same status
+line; each update replaces it. The line disappears when the `with` block ends.
 
 Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
 
@@ -44,12 +44,14 @@ with outwrite.configure_console(logger=logger):
     logger.info("Done")
 ```
 
-Logs appear above the status line. Cleanup happens automatically when the
-`with` block ends.
+Logs appear above the status line. Outwrite finishes printing queued messages
+and clears the status line when the `with` block ends.
 
 ## Multiple processes
 
-Pass the console connection to each worker and configure it there:
+The main process displays the logs and status. Pass the connection returned by
+`outwrite.configure_console()` to each worker process, then call the same
+function there:
 
 ```python
 import logging
@@ -67,39 +69,47 @@ def work(console_connection: outwrite.ConsoleConnection):
     logger.info("Worker finished")
 
 if __name__ == "__main__":
-    ctx = mp.get_context("spawn")
-    with outwrite.configure_console(logger=logger, mp_context=ctx) as console_connection:
-        process = ctx.Process(target=work, args=(console_connection,))
+    context = mp.get_context("spawn")
+    with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
+        process = context.Process(target=work, args=(console_connection,))
         process.start()
         process.join()
 ```
 
-Join workers before leaving the `with` block. Use the same named logger in the
-parent and workers. Threads can use the configured logger and `outwrite.status` directly.
+Wait for workers to finish with `process.join()` before leaving the `with` block.
+Use the same logger name in the main process and workers (`"my_app"` above).
+The example uses the same multiprocessing context to create the connection and
+worker, so they work together.
+
+Threads need no extra setup: use the logger and `outwrite.status` directly.
 
 See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
 
 ## Options
 
-- `console_level=logging.DEBUG` includes debug logs in the console, without
-  changing existing file handlers.
+- `console_level=logging.DEBUG` shows debug logs in the terminal without
+  changing which messages are written to existing log files.
 - `show_status=False` hides the status line without hiding logs.
 - `outwrite.status.clear()` clears the line so it can be used again.
-- `outwrite.status.disable()` immediately hides status in the parent and ignores further
-  updates for the rest of the session.
+- `outwrite.status.disable()` hides the line and ignores later updates until the
+  `with` block ends. Call it in the main process only.
 
-Output goes to stderr. Outside a terminal, logs still appear but the status line
-is hidden.
+By default, output goes to stderr. When output is redirected to a file or pipe,
+logs are still written, but the live status line is hidden.
 
 ### Custom appearance
 
-Pass `console_handler=your_rich_handler` to use your own RichHandler formatting,
-console, and log level. Existing handlers still receive logs; a supplied console
-handler is not added twice or closed by Outwrite.
+To customize log appearance, pass `console_handler=your_rich_handler`.
+Outwrite uses that RichHandler's formatting, console, and log level.
+Other logging handlers, such as file handlers, keep receiving messages.
+Outwrite won't add your handler twice or close it when the `with` block ends.
 
-For custom status styling, pass `render_status=your_status_renderer`, where
-`your_status_renderer(text, console)` returns a Rich renderable. Both options are
-parent-only; workers call `outwrite.configure_console(console_connection)` without customization.
+To style the status line, pass `render_status=your_status_renderer`.
+This function takes `(text, console)` and returns something Rich can display,
+such as a `rich.text.Text` object.
+
+Set these options in the main process only. Workers just call
+`outwrite.configure_console(console_connection)`.
 
 ## License
 
