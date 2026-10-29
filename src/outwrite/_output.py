@@ -9,13 +9,14 @@ import os
 import sys
 import threading
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass
 from logging.handlers import QueueHandler
 from multiprocessing.context import BaseContext
 from multiprocessing.queues import Queue
 from types import TracebackType
 
-from rich.console import Console
+from rich.console import Console, ConsoleRenderable
 from rich.live import Live
 from rich.logging import RichHandler
 from rich.text import Text
@@ -39,6 +40,14 @@ class _Status:
     def clear(self) -> None:
         """Clear the status line without ending the output session."""
         self.update(None)
+
+    def stop(self) -> None:
+        """Immediately clear parent status and ignore further updates for this session."""
+        if _session is None:
+            raise RuntimeError("Only the parent can stop the status display.")
+        with _session.render_lock:
+            _session.status_stopped = True
+            _session.live.stop()
 
 
 status = _Status()
@@ -85,6 +94,8 @@ class _OutputSession:
         logger: logging.Logger,
         console: Console,
         level: int,
+        console_handler: RichHandler | None,
+        status_renderer: Callable[[str, Console], ConsoleRenderable] | None,
     ) -> None:
         self.connection = connection
         self.logger = logger
@@ -92,8 +103,18 @@ class _OutputSession:
         self.previous_handlers = logger.handlers[:]
         self.previous_level = logger.level
         self.previous_propagate = logger.propagate
-        self.console_handler = RichHandler(console=console, level=level)
-        self.handlers = [*self.previous_handlers, self.console_handler]
+        self.console_handler = console_handler or RichHandler(
+            console=console, level=level
+        )
+        self.owns_console_handler = console_handler is None
+        self.handlers = [
+            handler
+            for handler in self.previous_handlers
+            if handler is not self.console_handler
+        ] + [self.console_handler]
+        self.status_renderer = status_renderer
+        self.status_stopped = False
+        self.render_lock = threading.RLock()
         self.queue_handler = QueueHandler(connection._queue)
         self.live = Live(
             console=console,
@@ -119,20 +140,27 @@ class _OutputSession:
             if message is None:
                 return
             try:
-                if isinstance(message, logging.LogRecord):
-                    for handler in self.handlers:
-                        if message.levelno >= handler.level:
-                            handler.handle(message)
-                elif not message:
-                    self.live.stop()
-                else:
-                    text = Text(
-                        message, style="cyan", no_wrap=True, overflow="ellipsis"
-                    )
-                    text.truncate(max(1, self.console.width - 2), overflow="ellipsis")
-                    self.live.update(text, refresh=self.live.is_started)
-                    if not self.live.is_started:
-                        self.live.start(refresh=True)
+                with self.render_lock:
+                    if isinstance(message, logging.LogRecord):
+                        for handler in self.handlers:
+                            if message.levelno >= handler.level:
+                                handler.handle(message)
+                    elif not message:
+                        self.live.stop()
+                    elif not self.status_stopped:
+                        if self.status_renderer is None:
+                            text = Text(
+                                message, style="cyan", no_wrap=True, overflow="ellipsis"
+                            )
+                            text.truncate(
+                                max(1, self.console.width - 2), overflow="ellipsis"
+                            )
+                            content = text
+                        else:
+                            content = self.status_renderer(message, self.console)
+                        self.live.update(content, refresh=self.live.is_started)
+                        if not self.live.is_started:
+                            self.live.start(refresh=True)
             except Exception as error:
                 # Keep draining so producers cannot deadlock behind a failed renderer.
                 self.error = error
@@ -152,7 +180,8 @@ class _OutputSession:
             self.connection._queue.close()
             self.connection._queue.join_thread()
             self.queue_handler.close()
-            self.console_handler.close()
+            if self.owns_console_handler:
+                self.console_handler.close()
             _session = None
             atexit.unregister(_cleanup_at_exit)
         if self.error is not None:
@@ -168,6 +197,8 @@ def setup_output(
     level: int = logging.INFO,
     show_status: bool = True,
     mp_context: BaseContext | None = None,
+    console_handler: RichHandler | None = None,
+    status_renderer: Callable[[str, Console], ConsoleRenderable] | None = None,
 ) -> OutputConnection:
     """Start a parent session, or connect a worker to the parent's session.
 
@@ -175,6 +206,8 @@ def setup_output(
     Join workers and logging threads before leaving the block.
     Worker usage: ``setup_output(output)`` before logging or updating status.
     Worker configuration comes from the connection, not the keyword options.
+    A custom RichHandler supplies the shared console and keeps its own level.
+    status_renderer(text, console) formats status in the parent only.
     """
     global _connection, _session
     if _connection is not None:
@@ -201,11 +234,15 @@ def setup_output(
     if context.get_start_method() == "fork":
         raise ValueError("Use a spawn or forkserver multiprocessing context, not fork.")
 
-    console = Console(stderr=True)
+    console = (
+        console_handler.console if console_handler is not None else Console(stderr=True)
+    )
     connection = OutputConnection(
         context.Queue(), logger.name, show_status and console.is_terminal, os.getpid()
     )
-    session = _OutputSession(connection, logger, console, level)
+    session = _OutputSession(
+        connection, logger, console, level, console_handler, status_renderer
+    )
     logger.handlers = [session.queue_handler]
     logger.setLevel(logging.DEBUG)
     logger.propagate = False

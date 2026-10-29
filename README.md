@@ -9,7 +9,7 @@ Requires Python 3.11+. Currently in alpha.
 ## Install
 
 ```sh
-python -m pip install outwrite==0.1.0a1
+python -m pip install outwrite==0.1.0a2
 ```
 
 ## Quick start
@@ -69,9 +69,20 @@ See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
 - `level=logging.DEBUG` includes debug logs.
 - `show_status=False` hides the status line without hiding logs.
 - `status.clear()` clears the line so it can be used again.
+- `status.stop()` immediately hides status in the parent for the rest of the session.
 
 Output goes to stderr. Outside a terminal, logs still appear but the status line
 is hidden.
+
+### Custom appearance
+
+Pass `console_handler=your_rich_handler` to use your own RichHandler formatting,
+console, and log level. Existing handlers still receive logs; a supplied console
+handler is not added twice or closed by Outwrite.
+
+For custom status styling, pass `status_renderer=format_status`, where
+`format_status(text, console)` returns a Rich renderable. Both options are
+parent-only; workers still call `setup_output(output)` without customization.
 
 ## License
 
