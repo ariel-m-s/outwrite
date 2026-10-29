@@ -6,29 +6,15 @@ Outwrite combines Python's standard logging with one live **status line**:
 text that updates in place to show what your program is doing.
 Logs stay above it, even when they come from different threads or processes.
 
-Think **"what happened"** above, **"what's happening now"** below:
+Log messages stay in the output. The status line changes in place:
 
-```text
-[10/30/26 12:00:00] INFO     Starting                         app.py:10
-[10/30/26 12:00:02] INFO     Finished file 2                  app.py:14
-Processing file 3 of 5
-```
+> [10/30/26 12:00:00] INFO Starting<br>
+> [10/30/26 12:00:02] INFO Finished file 2<br>
+> Processing file 3 of 5
 
-Show progress without printing a new line for every update. All processes share
-the same status line; each update replaces it.
-
-Keep important events in your logs and show what you're doing on the status line:
-
-```text
-Logs:    "Starting"         "Finished file 1"         "Finished file 2"
-         Each message adds a line.
-
-Status:  "File 1 of 5"  ->  "File 2 of 5"         ->  "File 3 of 5"
-         Each update replaces the same line.
-```
-
-Status can be any text: `"Downloading files"`, `"12 of 20 complete"`, or
-`"Last saved 10 seconds ago"`. Your code decides what it says and when it changes.
+The last line might change to “Processing file 4 of 5” without adding another
+line. Status is text you provide, not an automatically calculated progress bar.
+It can show a count, a task name, or the time of the last save.
 
 Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
 
@@ -64,12 +50,11 @@ with outwrite.configure_console(logger=logger):
 Run this in a terminal to see the last line change. When the `with` block ends,
 Outwrite finishes printing pending messages and removes the status line.
 
-Use `logger.info(...)`, `logger.warning(...)`, and the other logging methods as
-usual. Call `outwrite.status.update(...)` whenever the current task changes.
-Log messages stay visible; status is temporary. Neither call writes to a log
-file unless you have added a file handler to your logger.
+Keep using Python's logging methods as usual; only status updates need a new
+call. Outwrite doesn't create log files. If your logger already has a file
+handler, it continues to receive log messages, but not status updates.
 
-### A few useful options
+### Options
 
 Pass these options to `outwrite.configure_console(...)`:
 
@@ -85,26 +70,21 @@ You can also control the status line while working:
 | `outwrite.status.clear()` | Remove the current text. The next update can show it again. |
 | `outwrite.status.disable()` | Hide status and ignore later updates until the `with` block ends. Call this in the main process only. |
 
-By default, output goes to stderr, Python's usual stream for log messages.
-If you send that output to a file or pipe instead of a terminal, logs are still
-written, but the live status line is hidden.
+By default, output goes to stderr. When that stream is redirected to a file or
+pipe, logs are still written, but the live status line is hidden.
 
 ## Multiple processes
 
-Worker processes send their logs and status to the main process, which displays
-them together:
+The main process handles all terminal output. Workers send messages to it
+through a shared connection:
 
-```text
-Worker A --+
-           +--> Main process --> Logs above, one status line below
-Worker B --+
-```
+| Where | Setup |
+| --- | --- |
+| Main process | Call `outwrite.configure_console()` to get the connection. |
+| Each worker | Pass in the connection and call `outwrite.configure_console(console_connection)`. |
 
-There are three steps:
-
-1. In the main process, call `outwrite.configure_console()` to get a connection.
-2. Pass that connection to each worker and call the same function there.
-3. Wait for workers to finish before leaving the main process's `with` block.
+Wait for workers to finish before leaving the main process's `with` block.
+Otherwise, Outwrite may close before their final messages arrive.
 
 ```python
 import logging
@@ -133,12 +113,14 @@ if __name__ == "__main__":
         process.join()
 ```
 
-Here, `process.join()` waits for the worker. Use the same logger name in the main
-process and workers (`"my_app"` above).
+Use the same logger name in the main process and workers (“my_app” above).
+Outwrite forwards that logger's messages and messages from its child loggers
+that propagate to it, not every logger in the program.
 
 `multiprocessing.get_context("spawn")` chooses how Python starts workers:
 each gets a fresh Python interpreter. Use that same `context` for Outwrite and
-your processes so their shared queues work together. Keep process creation
+your processes so their shared queues work together. Outwrite defaults to spawn
+and also supports forkserver, but not fork. Keep process creation
 inside `if __name__ == "__main__":` so workers don't start more workers.
 
 Threads need no extra setup: use the logger and `outwrite.status` directly.
