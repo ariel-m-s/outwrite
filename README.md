@@ -11,7 +11,7 @@ Log messages stay in the output. The status line changes in place:
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
 [10/30/26 12:00:02] INFO     Finished file 2                  app.py:14
-Processing file 3 of 5
+                    Processing file 3 of 5
 ```
 
 The last line might change to “Processing file 4 of 5” without adding another
