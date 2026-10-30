@@ -53,6 +53,7 @@ Pass the connection to each worker and call `outwrite.configure_console()` there
 ```python
 import logging
 import multiprocessing as mp
+import time
 
 import outwrite
 
@@ -62,8 +63,9 @@ logger = logging.getLogger("my_app")
 def work(console_connection: outwrite.ConsoleConnection):
     outwrite.configure_console(console_connection)
     logger.info("Worker started")
-    outwrite.status.update("Processing files")
-    # Do your work here.
+    for number in range(1, 6):
+        outwrite.status.update(f"Processing file {number} of 5")
+        time.sleep(0.5)  # Simulate work so you can see the status change.
     logger.info("Worker finished")
 
 
