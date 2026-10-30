@@ -1,1 +1,2 @@
 include examples/multiprocessing_demo.py
+include examples/quick_demo.py

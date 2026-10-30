@@ -2,9 +2,13 @@
 
 Keep your logs readable and your progress visible.
 
-Outwrite combines Python's standard logging with one live **status line**:
-text that updates in place to show what your program is doing.
-Logs stay above it, even when they come from different threads or processes.
+Outwrite combines Python's standard logging with a live **status line** that
+updates in place while logs stay readable, including logs from worker processes.
+The status is plain text you control, so it fits naturally into existing CLI
+workflows.
+
+Try the [short multiprocessing demo](examples/quick_demo.py), or read on for the
+full setup and configuration options.
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
@@ -21,6 +25,8 @@ Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in 
 ```sh
 python -m pip install outwrite==0.1.0a3
 ```
+
+Outwrite is in alpha; the install command pins the version shown.
 
 ## Quick start
 
