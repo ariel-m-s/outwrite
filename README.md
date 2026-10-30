@@ -84,11 +84,11 @@ import outwrite
 logger = logging.getLogger("my_app")
 
 
-def work(name: str, console_connection: outwrite.ConsoleConnection, completed):
+def work(name: str, delay: float, console_connection: outwrite.ConsoleConnection, completed):
     outwrite.configure_console(console_connection)
     logger.info("%s started", name)
     for number in range(1, 6):
-        time.sleep(0.5)  # Simulate work so you can see the status change.
+        time.sleep(delay)  # Simulate workers running at different speeds.
         with completed.get_lock():
             completed.value += 1
         logger.info("%s finished file %s", name, number)
@@ -100,8 +100,8 @@ if __name__ == "__main__":
     completed = context.Value("i", 0)  # Shared integer, initially zero.
     with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
         processes = [
-            context.Process(target=work, args=(name, console_connection, completed))
-            for name in ("Worker A", "Worker B")
+            context.Process(target=work, args=(name, delay, console_connection, completed))
+            for name, delay in (("Worker A", 0.3), ("Worker B", 0.7))
         ]
         for process in processes:
             process.start()
