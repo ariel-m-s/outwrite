@@ -9,9 +9,9 @@ The status is plain text you control, so it fits naturally into existing CLI
 workflows.
 
 ```text
-[10/30/26 12:00:00] INFO     Starting                         app.py:10
+[10/30/26 12:00:00] INFO     Starting                        app.py:10
 [10/30/26 12:00:02] INFO     Configuration check passed      app.py:14
-                    Running connection check
+Running connection check
 ```
 
 Status is text you provide, not an automatically calculated progress bar.
@@ -68,6 +68,7 @@ python examples/multiprocessing_demo.py
 - Workers share one status line; the last update received is shown.
 
 Threads need no extra setup.
+
 ## Options
 
 Pass these options to `outwrite.configure_console(...)`:
