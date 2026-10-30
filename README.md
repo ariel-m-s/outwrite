@@ -88,9 +88,7 @@ def work(console_connection: outwrite.ConsoleConnection):
 
 if __name__ == "__main__":
     context = mp.get_context("spawn")
-    with outwrite.configure_console(
-        logger=logger, mp_context=context
-    ) as console_connection:
+    with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
         process = context.Process(target=work, args=(console_connection,))
         process.start()
         process.join()
