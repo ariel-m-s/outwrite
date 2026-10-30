@@ -4,7 +4,7 @@
 
 `outwrite` pairs standard Python logging with one status line that updates in place. Keep the useful messages, skip the progress chatter.
 
-![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png?v=97ea83f)
+![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](https://raw.githubusercontent.com/ariel-m-s/outwrite/b2cc972acd4dbe5a8af901d1c3a1c3b6cee6c189/docs/assets/outwrite-comparison.png)
 
 Built on [Rich](https://github.com/Textualize/rich) and standard logging. `outwrite` handles the queue, live display, and cleanup so you don't have to wire them together yourself.
 
@@ -46,7 +46,7 @@ Status is text you provide, not an automatically calculated progress bar. Use it
 
 Bring their logs into the same console, too. `outwrite` handles the queue, listener, and cleanup for batch jobs, parallel downloads, and multi-stage pipelines. Just need logging? Set `show_status=False`.
 
-![Illustration: downloader, resizer, and uploader tasks send cat-photo processing logs through a shared queue and single listener into one console, with no status line required.](docs/assets/outwrite-concurrency.png?v=1)
+![Illustration: downloader, resizer, and uploader tasks send cat-photo processing logs through a shared queue and single listener into one console, with no status line required.](https://raw.githubusercontent.com/ariel-m-s/outwrite/b2cc972acd4dbe5a8af901d1c3a1c3b6cee6c189/docs/assets/outwrite-concurrency.png)
 
 Logs and status updates travel through a shared queue to a single listener in the main process, rather than each process writing to the terminal on its own.
 
