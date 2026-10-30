@@ -46,9 +46,32 @@ with outwrite.configure_console(logger=logger):
 When the `with` block ends, Outwrite finishes printing pending messages and
 removes the status line. Existing file handlers still receive logs, but not status.
 
+### Hide and show status
+
+Use `clear()` to hide the line. The next `update()` shows it again:
+
+```python
+import time
+
+import outwrite
+
+with outwrite.configure_console():
+    outwrite.status.update("Working")
+    time.sleep(1)
+
+    outwrite.status.clear()
+    time.sleep(1)  # No status line during this pause.
+
+    outwrite.status.update("Working again")
+    time.sleep(1)
+```
+
+Use `clear()`, not `disable()`, if you want to show status again in the same block.
+
 ## Multiple processes
 
 Pass the connection to each worker and call `outwrite.configure_console()` there:
+Both workers below run at the same time and include their names in each message.
 
 ```python
 import logging
@@ -60,21 +83,27 @@ import outwrite
 logger = logging.getLogger("my_app")
 
 
-def work(console_connection: outwrite.ConsoleConnection):
+def work(name: str, console_connection: outwrite.ConsoleConnection):
     outwrite.configure_console(console_connection)
-    logger.info("Worker started")
+    logger.info("%s started", name)
     for number in range(1, 6):
-        outwrite.status.update(f"Processing file {number} of 5")
+        outwrite.status.update(f"{name}: processing file {number} of 5")
         time.sleep(0.5)  # Simulate work so you can see the status change.
-    logger.info("Worker finished")
+        logger.info("%s finished file %s", name, number)
+    logger.info("%s finished", name)
 
 
 if __name__ == "__main__":
     context = mp.get_context("spawn")
     with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
-        process = context.Process(target=work, args=(console_connection,))
-        process.start()
-        process.join()
+        processes = [
+            context.Process(target=work, args=(name, console_connection))
+            for name in ("Worker A", "Worker B")
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
 ```
 
 - Use the same logger name and multiprocessing context in the main process and workers.
