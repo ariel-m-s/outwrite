@@ -2,11 +2,7 @@
 
 Keep your logs readable and your progress visible.
 
-Outwrite combines Python's standard logging with a live **status line** that
-updates in place while logs stay readable, including messages from multiple
-processes or threads.
-The status is plain text you control, so it fits naturally into existing CLI
-workflows.
+`outwrite` combines Python's standard logging with a live **status line** that updates in place while logs stay readable, including messages from multiple processes or threads. The status is plain text you control, so it fits naturally into existing CLI workflows.
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                        app.py:10
@@ -45,18 +41,15 @@ with outwrite.configure_console(logger=logger):
     logger.info("Done")
 ```
 
-When the `with` block ends, Outwrite finishes printing pending messages and
-removes the status line. Existing file handlers still receive logs, but not status.
+When the `with` block ends, `outwrite` finishes printing pending messages and removes the status line. Existing file handlers still receive logs, but not status.
 
 ## Multiple processes
 
-Pass the connection returned by the main process to each child process and call
-`outwrite.configure_console(console_connection)` there before logging or updating
-status.
+Pass the connection returned by the main process to each child process and call `outwrite.configure_console(console_connection)` there before logging or updating status.
 
-The [multiprocessing demo](https://github.com/ariel-m-s/outwrite/blob/main/examples/multiprocessing_demo.py)
-shows the complete setup, including cleanup when interrupted with Ctrl+C.
-After installing Outwrite, run it from a repository checkout:
+The [multiprocessing demo](https://github.com/ariel-m-s/outwrite/blob/main/examples/multiprocessing_demo.py) shows the complete setup, including cleanup when interrupted with Ctrl+C.
+
+After installing `outwrite`, run it from a repository checkout:
 
 ```sh
 python examples/multiprocessing_demo.py
@@ -64,7 +57,6 @@ python examples/multiprocessing_demo.py
 
 - Use the same logger name and multiprocessing context in the main process and workers.
 - Join workers before leaving the `with` block so their final messages arrive.
-- Use spawn or forkserver, not fork.
 - Workers share one status line; the last update received is shown.
 
 Threads need no extra setup.
@@ -76,7 +68,7 @@ Pass these options to `outwrite.configure_console(...)`:
 | Option | Default | What it does |
 | --- | --- | --- |
 | `console_connection` | `None` | Pass the main process's connection when setting up a worker. Leave unset in the main process. |
-| `logger` | `None` | The Python logger to use. If omitted, uses the logger named “outwrite”. The root logger is not supported. |
+| `logger` | `None` | The Python logger to use. If omitted, uses the logger named `"outwrite"`. The root logger is not supported. |
 | `console_level` | `logging.INFO` | Minimum log level shown by the default console handler. Accepts integer logging levels, including custom levels. Existing handlers keep their own levels. |
 | `show_status` | `True` | Whether to show the status line. Does not affect logs. |
 | `mp_context` | `None` | Multiprocessing context used to create the shared queue. Defaults to spawn. Use the same context to create your workers. |
@@ -91,8 +83,7 @@ process; they are ignored when a connection is supplied.
 | `outwrite.status.clear()` | Remove the current text. The next update can show it again. |
 | `outwrite.status.disable()` | Hide status and ignore later updates until the `with` block ends. Call this in the main process only. |
 
-By default, output goes to stderr. When that stream is redirected to a file or
-pipe, logs are still written, but the live status line is hidden.
+By default, output goes to stderr. When that stream is redirected to a file or pipe, logs are still written, but the live status line is hidden.
 
 ## Change how it looks
 
@@ -126,9 +117,7 @@ with outwrite.configure_console(
     # Do your work here.
 ```
 
-A supplied handler controls the console and log level; `console_level` does not
-override it. Status uses the same console. Outwrite reuses your handler without
-adding it twice or closing it afterward.
+A supplied handler controls the console and log level; `console_level` does not override it. Status uses the same console. `outwrite` reuses your handler without adding it twice or closing it afterward.
 
 ## License
 
