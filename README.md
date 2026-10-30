@@ -4,7 +4,7 @@ Keep your logs readable and your progress visible.
 
 `outwrite` brings logs from multiple processes or threads into one coordinated console, with a live **status line** showing what's happening now. Logs and status updates share one queue, keeping output readable without cluttering the log with progress messages.
 
-![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png)
+![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png?v=97ea83f)
 
 Status is text you provide, not an automatically calculated progress bar.
 
@@ -44,7 +44,7 @@ When the `with` block ends, `outwrite` finishes printing pending messages and re
 
 More cooks, one console. Logs and status updates travel through a shared queue to a single listener in the main process, rather than each process writing to the terminal on its own.
 
-![Diagram: logs and status updates from the main process, process A, and process B flow into one shared queue, then a single listener renders logs above one live status line.](docs/assets/outwrite-flow.svg)
+![Diagram: logs and status updates from the main process, process A, and process B flow into one shared queue, then a single listener renders logs above one live status line.](docs/assets/outwrite-flow.svg?v=97ea83f)
 
 Pass the connection returned by the main process to each child process and call `outwrite.configure_console(console_connection)` there before logging or updating status.
 
