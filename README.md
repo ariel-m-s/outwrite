@@ -1,14 +1,10 @@
 # Outwrite
 
-Keep your logs readable and your progress visible.
+**Readable logs. Live status. Even across processes and threads.**
 
-`outwrite` brings logs from multiple processes or threads into one coordinated console, with a live **status line** showing what's happening now. Logs and status updates share one queue, keeping output readable without cluttering the log with progress messages.
-
-**Keep progress visible, not repetitive.** Useful for imports, downloads, and long-running checks:
+`outwrite` pairs standard Python logging with one status line that updates in place. Keep the useful messages, skip the progress chatter.
 
 ![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png?v=97ea83f)
-
-Status is text you provide, not an automatically calculated progress bar.
 
 Built on [Rich](https://github.com/Textualize/rich). Python 3.11+.
 
@@ -42,9 +38,11 @@ with outwrite.configure_console(logger=logger):
 
 When the `with` block ends, `outwrite` finishes printing pending messages and removes the status line. Existing file handlers still receive logs, but not status.
 
-## Logging from multiple processes or threads
+Status is text you provide, not an automatically calculated progress bar. Use it for imports, downloads, long-running checks, or whatever your script is doing now.
 
-**Concurrent work, centralized output.** Useful for batch processing, parallel downloads, and multi-stage pipelines, even without a status line. Use `show_status=False` when you only need coordinated logging.
+## Running multiple processes or threads?
+
+Bring their logs into the same console, too. `outwrite` handles the queue, listener, and cleanup for batch jobs, parallel downloads, and multi-stage pipelines. Just need logging? Set `show_status=False`.
 
 ![Illustration: downloader, resizer, and uploader tasks send cat-photo processing logs through a shared queue and single listener into one console, with no status line required.](docs/assets/outwrite-concurrency.png?v=1)
 
@@ -67,8 +65,6 @@ python examples/multiprocessing_demo.py
 Threads share the same setup, so there's no connection to pass around. Messages are displayed in queue-receipt order, not globally sorted by timestamp.
 
 ## Options
-
-Configure logging and status without changing your whole logging setup:
 
 Pass these options to `outwrite.configure_console(...)`:
 
