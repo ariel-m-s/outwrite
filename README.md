@@ -3,7 +3,8 @@
 Keep your logs readable and your progress visible.
 
 Outwrite combines Python's standard logging with a live **status line** that
-updates in place while logs stay readable, including logs from worker processes.
+updates in place while logs stay readable, including messages from multiple
+processes or threads.
 The status is plain text you control, so it fits naturally into existing CLI
 workflows.
 
