@@ -6,17 +6,13 @@ Outwrite combines Python's standard logging with one live **status line**:
 text that updates in place to show what your program is doing.
 Logs stay above it, even when they come from different threads or processes.
 
-Log messages stay in the output. The status line changes in place:
-
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
 [10/30/26 12:00:02] INFO     Finished file 2                  app.py:14
                     Processing file 3 of 5
 ```
 
-The last line might change to “Processing file 4 of 5” without adding another
-line. Status is text you provide, not an automatically calculated progress bar.
-It can show a count, a task name, or the time of the last save.
+Status is text you provide, not an automatically calculated progress bar.
 
 Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
 
@@ -27,8 +23,6 @@ python -m pip install outwrite==0.1.0a3
 ```
 
 ## Quick start
-
-Try this small example to see the status change while logs appear:
 
 ```python
 import logging
@@ -49,25 +43,12 @@ with outwrite.configure_console(logger=logger):
     logger.info("Done")
 ```
 
-Run this in a terminal to see the last line change. When the `with` block ends,
-Outwrite finishes printing pending messages and removes the status line.
-
-Keep using Python's logging methods as usual; only status updates need a new
-call. Outwrite doesn't create log files. If your logger already has a file
-handler, it continues to receive log messages, but not status updates.
+When the `with` block ends, Outwrite finishes printing pending messages and
+removes the status line. Existing file handlers still receive logs, but not status.
 
 ## Multiple processes
 
-The main process handles all terminal output. Workers send messages to it
-through a shared connection:
-
-| Where | Setup |
-| --- | --- |
-| Main process | Call `outwrite.configure_console()` to get the connection. |
-| Each worker | Pass in the connection and call `outwrite.configure_console(console_connection)`. |
-
-Wait for workers to finish before leaving the main process's `with` block.
-Otherwise, Outwrite may close before their final messages arrive.
+Pass the connection to each worker and call `outwrite.configure_console()` there:
 
 ```python
 import logging
@@ -94,22 +75,13 @@ if __name__ == "__main__":
         process.join()
 ```
 
-Use the same logger name in the main process and workers (“my_app” above).
-Outwrite forwards that logger's messages and messages from its child loggers
-that propagate to it, not every logger in the program.
+- Use the same logger name and multiprocessing context in the main process and workers.
+- Join workers before leaving the `with` block so their final messages arrive.
+- Use spawn or forkserver, not fork.
+- Workers share one status line; the last update received is shown.
 
-`multiprocessing.get_context("spawn")` chooses how Python starts workers:
-each gets a fresh Python interpreter. Use that same `context` for Outwrite and
-your processes so their shared queues work together. Outwrite defaults to spawn
-and also supports forkserver, but not fork. Keep process creation
-inside `if __name__ == "__main__":` so workers don't start more workers.
-
-Threads need no extra setup: use the logger and `outwrite.status` directly.
-
-There is one shared status line, not one per worker. If several workers update
-it, the last update received is the one shown.
-
-See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
+Threads need no extra setup. See the [full example](examples/multiprocessing_demo.py)
+for handling Ctrl+C.
 
 ## Options
 
@@ -128,8 +100,6 @@ Pass these options to `outwrite.configure_console(...)`:
 In workers, pass only `console_connection`. The other options configure the main
 process; they are ignored when a connection is supplied.
 
-You can also control the status line while working:
-
 | Call | What it does |
 | --- | --- |
 | `outwrite.status.clear()` | Remove the current text. The next update can show it again. |
@@ -140,9 +110,7 @@ pipe, logs are still written, but the live status line is hidden.
 
 ## Change how it looks
 
-Outwrite uses Rich for formatting. You can change the logs, the status line,
-or both. This example hides the time and source filename in logs and makes
-status text green:
+This example hides the time and source filename in logs and makes status green:
 
 ```python
 import logging
@@ -170,14 +138,9 @@ with outwrite.configure_console(
     # Do your work here.
 ```
 
-Both settings are optional. A supplied handler controls the console and log
-level; `console_level` does not override it. Outwrite uses that same console
-for status and passes it to your rendering function so you can fit the text
-to its width.
-
-Existing file handlers keep receiving logs. Outwrite doesn't add your console
-handler twice if it's already attached, and leaves it open when finished.
-Set appearance options in the main process only; workers need no changes.
+A supplied handler controls the console and log level; `console_level` does not
+override it. Status uses the same console. Outwrite reuses your handler without
+adding it twice or closing it afterward.
 
 ## License
 
