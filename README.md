@@ -8,8 +8,8 @@ Logs stay above it, even when they come from different threads or processes.
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
-[10/30/26 12:00:02] INFO     Finished file 2                  app.py:14
-                    Processing file 3 of 5
+[10/30/26 12:00:02] INFO     Configuration check passed      app.py:14
+                    Running connection check
 ```
 
 Status is text you provide, not an automatically calculated progress bar.
@@ -35,10 +35,10 @@ logger = logging.getLogger("my_app")
 with outwrite.configure_console(logger=logger):
     logger.info("Starting")
 
-    for number in range(1, 6):
-        outwrite.status.update(f"Processing file {number} of 5")
-        time.sleep(0.5)  # Your work goes here.
-        logger.info("Finished file %s", number)
+    for check in ("Configuration", "Connection", "Permissions"):
+        outwrite.status.update(f"Running {check.lower()} check")
+        time.sleep(0.5)  # Simulate each check.
+        logger.info("%s check passed", check)
 
     logger.info("Done")
 ```
@@ -56,13 +56,13 @@ import time
 import outwrite
 
 with outwrite.configure_console():
-    outwrite.status.update("Working")
+    outwrite.status.update("Waiting for the next task")
     time.sleep(1)
 
     outwrite.status.clear()
     time.sleep(1)  # No status line during this pause.
 
-    outwrite.status.update("Working again")
+    outwrite.status.update("Running the next task")
     time.sleep(1)
 ```
 
@@ -180,7 +180,7 @@ with outwrite.configure_console(
     logger=logger, console_handler=handler, render_status=render_status
 ):
     logger.info("Starting")
-    outwrite.status.update("Processing files")
+    outwrite.status.update("Simulation: step 1 of 100")
     # Do your work here.
 ```
 
