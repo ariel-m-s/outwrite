@@ -2,7 +2,7 @@
 
 Keep your logs readable and your progress visible.
 
-`outwrite` combines Python's standard logging with a live **status line** that updates in place while logs stay readable, including messages from multiple processes or threads. The status is plain text you control, so it fits naturally into existing CLI workflows.
+`outwrite` brings logs from multiple processes or threads into one coordinated console, with a live **status line** showing what's happening now. Logs and status updates share one queue, keeping output readable without cluttering the log with progress messages.
 
 ```text
 [10/30/26 12:00:00] INFO     Starting                        app.py:10
