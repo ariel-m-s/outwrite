@@ -8,9 +8,6 @@ processes or threads.
 The status is plain text you control, so it fits naturally into existing CLI
 workflows.
 
-Try the [short multiprocessing demo](examples/quick_demo.py), or read on for the
-full setup and configuration options.
-
 ```text
 [10/30/26 12:00:00] INFO     Starting                         app.py:10
 [10/30/26 12:00:02] INFO     Configuration check passed      app.py:14
@@ -51,82 +48,19 @@ with outwrite.configure_console(logger=logger):
 When the `with` block ends, Outwrite finishes printing pending messages and
 removes the status line. Existing file handlers still receive logs, but not status.
 
-### Hide and show status
-
-Use `clear()` to hide the line. The next `update()` shows it again:
-
-```python
-import time
-
-import outwrite
-
-with outwrite.configure_console():
-    outwrite.status.update("Waiting for the next task")
-    time.sleep(1)
-
-    outwrite.status.clear()
-    time.sleep(1)  # No status line during this pause.
-
-    outwrite.status.update("Running the next task")
-    time.sleep(1)
-```
-
-Use `clear()`, not `disable()`, if you want to show status again in the same block.
-
 ## Multiple processes
 
-Pass the connection to each worker and call `outwrite.configure_console()` there:
-Both workers log their own messages. The main process shows their combined
-progress on the status line:
+Pass the connection returned by the main process to each child process and call
+`outwrite.configure_console(console_connection)` there before logging or updating
+status.
 
-```python
-import logging
-import multiprocessing as mp
-import time
+The [multiprocessing demo](https://github.com/ariel-m-s/outwrite/blob/main/examples/multiprocessing_demo.py)
+shows the complete setup, including cleanup when interrupted with Ctrl+C.
+After installing Outwrite, run it from a repository checkout:
 
-import outwrite
-
-logger = logging.getLogger("my_app")
-
-
-def work(name: str, delay: float, console_connection: outwrite.ConsoleConnection, completed):
-    outwrite.configure_console(console_connection)
-    logger.info("%s started", name)
-    for number in range(1, 6):
-        time.sleep(delay)  # Simulate workers running at different speeds.
-        with completed.get_lock():
-            completed.value += 1
-        logger.info("%s finished file %s", name, number)
-    logger.info("%s finished", name)
-
-
-if __name__ == "__main__":
-    context = mp.get_context("spawn")
-    completed = context.Value("i", 0)  # Shared integer, initially zero.
-    with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
-        processes = [
-            context.Process(target=work, args=(name, delay, console_connection, completed))
-            for name, delay in (("Worker A", 0.3), ("Worker B", 0.7))
-        ]
-        for process in processes:
-            process.start()
-
-        while any(process.is_alive() for process in processes):
-            with completed.get_lock():
-                count = completed.value
-            outwrite.status.update(f"Total files ready: {count} of 10")
-            time.sleep(0.1)
-
-        for process in processes:
-            process.join()
-            if process.exitcode != 0:
-                raise RuntimeError(f"Worker exited with code {process.exitcode}")
-
-        logger.info("Total files ready: %s of 10", completed.value)
+```sh
+python examples/multiprocessing_demo.py
 ```
-
-The shared counter tracks completed files; Outwrite only displays the text.
-The lock prevents workers from changing the counter at the same time.
 
 - Use the same logger name and multiprocessing context in the main process and workers.
 - Join workers before leaving the `with` block so their final messages arrive.
