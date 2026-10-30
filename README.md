@@ -56,25 +56,6 @@ Keep using Python's logging methods as usual; only status updates need a new
 call. Outwrite doesn't create log files. If your logger already has a file
 handler, it continues to receive log messages, but not status updates.
 
-### Options
-
-Pass these options to `outwrite.configure_console(...)`:
-
-| Option | Default | What it does |
-| --- | --- | --- |
-| `console_level` | `logging.INFO` | Minimum log level shown by the default console handler. Accepts integer logging levels, including custom levels. Existing handlers keep their own levels. |
-| `show_status` | `True` | Whether to show the status line. Does not affect logs. |
-
-You can also control the status line while working:
-
-| Call | What it does |
-| --- | --- |
-| `outwrite.status.clear()` | Remove the current text. The next update can show it again. |
-| `outwrite.status.disable()` | Hide status and ignore later updates until the `with` block ends. Call this in the main process only. |
-
-By default, output goes to stderr. When that stream is redirected to a file or
-pipe, logs are still written, but the live status line is hidden.
-
 ## Multiple processes
 
 The main process handles all terminal output. Workers send messages to it
@@ -132,15 +113,42 @@ it, the last update received is the one shown.
 
 See the [full example](examples/multiprocessing_demo.py) for handling Ctrl+C.
 
+## Options
+
+Pass these options to `outwrite.configure_console(...)`:
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `console_connection` | `None` | Pass the main process's connection when setting up a worker. Leave unset in the main process. |
+| `logger` | `None` | The Python logger to use. If omitted, uses the logger named “outwrite”. The root logger is not supported. |
+| `console_level` | `logging.INFO` | Minimum log level shown by the default console handler. Accepts integer logging levels, including custom levels. Existing handlers keep their own levels. |
+| `show_status` | `True` | Whether to show the status line. Does not affect logs. |
+| `mp_context` | `None` | Multiprocessing context used to create the shared queue. Defaults to spawn. Use the same context to create your workers. |
+| `console_handler` | `None` | Your own RichHandler for console logs. Its console, formatting, and level replace the defaults. |
+| `render_status` | `None` | Function that takes `(text, console)` and returns something Rich can display. The default is cyan text that fits on one line. |
+
+In workers, pass only `console_connection`. The other options configure the main
+process; they are ignored when a connection is supplied.
+
+You can also control the status line while working:
+
+| Call | What it does |
+| --- | --- |
+| `outwrite.status.clear()` | Remove the current text. The next update can show it again. |
+| `outwrite.status.disable()` | Hide status and ignore later updates until the `with` block ends. Call this in the main process only. |
+
+By default, output goes to stderr. When that stream is redirected to a file or
+pipe, logs are still written, but the live status line is hidden.
+
 ## Custom appearance
 
-To customize log appearance, pass `console_handler=your_rich_handler`.
+Use `console_handler` to customize log appearance.
 Outwrite uses that RichHandler's formatting, console, and log level.
 Other logging handlers, such as file handlers, keep receiving messages.
 If your handler is already on the logger, it won't print messages twice.
 Outwrite leaves your handler open when the `with` block ends.
 
-To style the status line, pass `render_status=your_status_renderer`.
+Use `render_status` to style the status line.
 This function takes `(text, console)` and returns something Rich can display,
 such as a `rich.text.Text` object.
 
