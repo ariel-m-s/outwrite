@@ -140,20 +140,46 @@ You can also control the status line while working:
 By default, output goes to stderr. When that stream is redirected to a file or
 pipe, logs are still written, but the live status line is hidden.
 
-## Custom appearance
+## Change how it looks
 
-Use `console_handler` to customize log appearance.
-Outwrite uses that RichHandler's formatting, console, and log level.
-Other logging handlers, such as file handlers, keep receiving messages.
-If your handler is already on the logger, it won't print messages twice.
-Outwrite leaves your handler open when the `with` block ends.
+Outwrite uses Rich for formatting. You can change the logs, the status line,
+or both. This example hides the time and source filename in logs and makes
+status text green:
 
-Use `render_status` to style the status line.
-This function takes `(text, console)` and returns something Rich can display,
-such as a `rich.text.Text` object.
+```python
+import logging
 
-Set these options in the main process only. Workers just call
-`outwrite.configure_console(console_connection)`.
+import outwrite
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.text import Text
+
+logger = logging.getLogger("my_app")
+handler = RichHandler(show_time=False, show_path=False, level=logging.INFO)
+
+
+def render_status(text: str, console: Console) -> Text:
+    status_text = Text(text, style="green", no_wrap=True)
+    status_text.truncate(max(1, console.width - 2), overflow="ellipsis")
+    return status_text
+
+
+with outwrite.configure_console(
+    logger=logger, console_handler=handler, render_status=render_status
+):
+    logger.info("Starting")
+    outwrite.status.update("Processing files")
+    # Do your work here.
+```
+
+Both settings are optional. A supplied handler controls the console and log
+level; `console_level` does not override it. Outwrite uses that same console
+for status and passes it to your rendering function so you can fit the text
+to its width.
+
+Existing file handlers keep receiving logs. Outwrite doesn't add your console
+handler twice if it's already attached, and leaves it open when finished.
+Set appearance options in the main process only; workers need no changes.
 
 ## License
 
