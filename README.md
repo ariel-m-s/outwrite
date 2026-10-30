@@ -71,7 +71,8 @@ Use `clear()`, not `disable()`, if you want to show status again in the same blo
 ## Multiple processes
 
 Pass the connection to each worker and call `outwrite.configure_console()` there:
-Both workers below run at the same time and include their names in each message.
+Both workers log their own messages. The main process shows their combined
+progress on the status line:
 
 ```python
 import logging
@@ -83,37 +84,51 @@ import outwrite
 logger = logging.getLogger("my_app")
 
 
-def work(name: str, console_connection: outwrite.ConsoleConnection):
+def work(name: str, console_connection: outwrite.ConsoleConnection, completed):
     outwrite.configure_console(console_connection)
     logger.info("%s started", name)
     for number in range(1, 6):
-        outwrite.status.update(f"{name}: processing file {number} of 5")
         time.sleep(0.5)  # Simulate work so you can see the status change.
+        with completed.get_lock():
+            completed.value += 1
         logger.info("%s finished file %s", name, number)
     logger.info("%s finished", name)
 
 
 if __name__ == "__main__":
     context = mp.get_context("spawn")
+    completed = context.Value("i", 0)  # Shared integer, initially zero.
     with outwrite.configure_console(logger=logger, mp_context=context) as console_connection:
         processes = [
-            context.Process(target=work, args=(name, console_connection))
+            context.Process(target=work, args=(name, console_connection, completed))
             for name in ("Worker A", "Worker B")
         ]
         for process in processes:
             process.start()
+
+        while any(process.is_alive() for process in processes):
+            with completed.get_lock():
+                count = completed.value
+            outwrite.status.update(f"Total files ready: {count} of 10")
+            time.sleep(0.1)
+
         for process in processes:
             process.join()
+            if process.exitcode != 0:
+                raise RuntimeError(f"Worker exited with code {process.exitcode}")
+
+        logger.info("Total files ready: %s of 10", completed.value)
 ```
+
+The shared counter tracks completed files; Outwrite only displays the text.
+The lock prevents workers from changing the counter at the same time.
 
 - Use the same logger name and multiprocessing context in the main process and workers.
 - Join workers before leaving the `with` block so their final messages arrive.
 - Use spawn or forkserver, not fork.
 - Workers share one status line; the last update received is shown.
 
-Threads need no extra setup. See the [full example](examples/multiprocessing_demo.py)
-for handling Ctrl+C.
-
+Threads need no extra setup.
 ## Options
 
 Pass these options to `outwrite.configure_console(...)`:
