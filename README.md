@@ -6,7 +6,9 @@
 
 ![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png?v=97ea83f)
 
-Built on [Rich](https://github.com/Textualize/rich). Python 3.11+.
+Built on [Rich](https://github.com/Textualize/rich) and standard logging. `outwrite` handles the queue, live display, and cleanup so you don't have to wire them together yourself.
+
+Requires Python 3.11+.
 
 ## Install
 
