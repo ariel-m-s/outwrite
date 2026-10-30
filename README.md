@@ -4,11 +4,7 @@ Keep your logs readable and your progress visible.
 
 `outwrite` brings logs from multiple processes or threads into one coordinated console, with a live **status line** showing what's happening now. Logs and status updates share one queue, keeping output readable without cluttering the log with progress messages.
 
-```text
-[10/30/26 12:00:00] INFO     Starting                        app.py:10
-[10/30/26 12:00:02] INFO     Configuration check passed      app.py:14
-Running connection check
-```
+![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](https://raw.githubusercontent.com/ariel-m-s/outwrite/main/docs/assets/outwrite-comparison.png)
 
 Status is text you provide, not an automatically calculated progress bar.
 
@@ -22,28 +18,33 @@ pip install outwrite
 
 ## Quick start
 
+A tiny coffee run. Keep the milestones in the log; let status handle the play-by-play:
+
 ```python
 import logging
 import time
 
 import outwrite
 
-logger = logging.getLogger("my_app")
+logger = logging.getLogger("coffee")
 
 with outwrite.configure_console(logger=logger):
-    logger.info("Starting")
+    logger.info("Beans ready")
 
-    for check in ("Configuration", "Connection", "Permissions"):
-        outwrite.status.update(f"Running {check.lower()} check")
-        time.sleep(0.5)  # Simulate each check.
-        logger.info("%s check passed", check)
+    for cup in range(1, 4):
+        outwrite.status.update(f"Brewing cup {cup}/3. Almost human.")
+        time.sleep(0.5)  # Simulate brewing.
 
-    logger.info("Done")
+    logger.info("Coffee ready")
 ```
 
 When the `with` block ends, `outwrite` finishes printing pending messages and removes the status line. Existing file handlers still receive logs, but not status.
 
 ## Multiple processes
+
+More cooks, one console. Logs and status updates travel through a shared queue to a single listener in the main process, rather than each process writing to the terminal on its own.
+
+![Diagram: logs and status updates from the main process, process A, and process B flow into one shared queue, then a single listener renders logs above one live status line.](https://raw.githubusercontent.com/ariel-m-s/outwrite/main/docs/assets/outwrite-flow.svg)
 
 Pass the connection returned by the main process to each child process and call `outwrite.configure_console(console_connection)` there before logging or updating status.
 
@@ -59,9 +60,11 @@ python examples/multiprocessing_demo.py
 - Join workers before leaving the `with` block so their final messages arrive.
 - Workers share one status line; the last update received is shown.
 
-Threads need no extra setup.
+Threads share the same setup, so there's no connection to pass around. Messages are displayed in queue-receipt order, not globally sorted by timestamp.
 
 ## Options
+
+Configure logging and status without changing your whole logging setup:
 
 Pass these options to `outwrite.configure_console(...)`:
 
@@ -112,7 +115,7 @@ with outwrite.configure_console(
     logger=logger, console_handler=handler, render_status=render_status
 ):
     logger.info("Starting")
-    outwrite.status.update("Simulation: step 1 of 100")
+    outwrite.status.update("Brewing coffee. Worth the wait.")
     time.sleep(1)
     # Do your work here.
 ```

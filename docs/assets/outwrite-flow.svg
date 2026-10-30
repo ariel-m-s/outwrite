@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="360" viewBox="0 0 1120 360" style="max-width:100%;height:auto" role="img" aria-labelledby="title description">
+  <title id="title">More cooks, one console</title>
+  <desc id="description">The main process and two child processes send logs and status updates through one shared queue to a single listener in the main process. It displays log messages above one live status line. Threads use the same path.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#6de0d0"/></marker>
+  </defs>
+  <rect width="1120" height="360" rx="18" fill="#101725"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="32" y="46" font-size="25" font-weight="700" fill="#edf2fa">More cooks, one console.</text>
+    <text x="32" y="77" font-size="17" fill="#bac5d8">Logs and status take the same route. Threads do too.</text>
+    <g fill="#202b3d" stroke="#45536b">
+      <rect x="32" y="111" width="215" height="48" rx="9"/>
+      <rect x="32" y="179" width="215" height="48" rx="9"/>
+      <rect x="32" y="247" width="215" height="48" rx="9"/>
+      <rect x="370" y="169" width="180" height="68" rx="10"/>
+      <rect x="631" y="169" width="180" height="68" rx="10"/>
+      <rect x="875" y="134" width="213" height="138" rx="10"/>
+    </g>
+    <g fill="#edf2fa" font-size="19" text-anchor="middle">
+      <text x="139" y="141">Main process</text>
+      <text x="139" y="209">Process A</text>
+      <text x="139" y="277">Process B</text>
+      <text x="460" y="209">Shared queue</text>
+      <text x="721" y="197">Single listener</text>
+      <text x="721" y="221" font-size="14" fill="#bac5d8">in the main process</text>
+    </g>
+    <g fill="none" stroke="#6de0d0" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M247 135H300V203H367"/>
+      <path d="M247 203H367"/>
+      <path d="M247 271H300V203H367"/>
+      <path d="M550 203H628"/>
+      <path d="M811 203H872"/>
+    </g>
+    <g font-family="monospace" font-size="15">
+      <text x="893" y="167" fill="#89bbff">INFO beans ready</text>
+      <text x="893" y="194" fill="#ffd18a">WARN decaf detected</text>
+      <path d="M890 212H1072" stroke="#45536b"/>
+      <text x="893" y="244" fill="#6de0d0">Brewing cup 6/100</text>
+    </g>
+    <text x="32" y="333" fill="#93a2ba" font-size="15">One shared status line; the last update received is shown. Diagram, not terminal output.</text>
+  </g>
+</svg>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Less scroll. More signal. — outwrite</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 1200px; height: 900px; background: #101725; color: #edf2fa; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 54px 48px; }
+  .eyebrow { color: #6de0d0; font: 600 18px Menlo, monospace; letter-spacing: 1px; }
+  h1 { font-size: 62px; line-height: 1.1; letter-spacing: -2px; margin: 20px 0 16px; }
+  .intro { font-size: 23px; color: #bac5d8; margin: 0 0 38px; }
+  .panels { display: flex; gap: 24px; }
+  .panel { width: 540px; }
+  .label { font-size: 17px; font-weight: 650; color: #bdc9dc; margin-bottom: 12px; }
+  .terminal { height: 428px; background: #0a101b; border: 1px solid #344057; border-radius: 14px; overflow: hidden; box-shadow: 0 14px 36px #0004; }
+  .bar { height: 44px; background: #202b3d; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .red { background: #ff6a68; } .yellow { background: #eab85b; } .green { background: #64cc93; }
+  .filename { margin-left: 16px; font: 13px Menlo, monospace; color: #bac5d8; }
+  .output { padding: 20px 18px; font: 17px/1.82 Menlo, monospace; white-space: pre; }
+  .prompt { color: #a4b2cb; } .info { color: #89bbff; } .progress { color: #9aa8be; }
+  .warning { color: #ffd18a; }
+  .status { color: #6de0d0; background: #6de0d00c; display: block; margin: 12px -8px 0; padding: 4px 8px; border-left: 2px solid #6de0d0; }
+  .note { color: #b7c3d6; font-size: 18px; margin: 20px 0 0; }
+  .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: center; }
+  .install { border: 1px solid #45536b; border-radius: 9px; padding: 12px 18px; font: 18px Menlo, monospace; color: #edf2fa; }
+  .url { font-size: 18px; color: #aebcd2; }
+  .disclosure { margin-top: 24px; color: #93a2ba; font-size: 15px; }
+</style>
+<div class="eyebrow">outwrite / Python logging + live status</div>
+<h1>Less scroll. More signal.</h1>
+<p class="intro">Multiple processes or threads. One coordinated console.</p>
+<div class="panels">
+  <section class="panel">
+    <div class="label">BEFORE / progress as log messages</div>
+    <div class="terminal">
+      <div class="bar"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i><span class="filename">coffee_pipeline.py</span></div>
+      <div class="output"><span class="prompt">$ python coffee_pipeline.py</span>
+<span class="info">INFO</span> grinder: beans ready
+<span class="progress">INFO brewer: brewing cup 1/100
+INFO brewer: brewing cup 2/100</span>
+<span class="warning">WARN brewer: decaf detected</span>
+<span class="progress">INFO brewer: brewing cup 3/100
+INFO brewer: brewing cup 4/100
+INFO brewer: brewing cup 5/100
+INFO brewer: brewing cup 6/100</span></div>
+    </div>
+    <p class="note">Progress competes with the useful messages.</p>
+  </section>
+  <section class="panel">
+    <div class="label">AFTER / logs + live status with outwrite</div>
+    <div class="terminal">
+      <div class="bar"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i><span class="filename">coffee_pipeline.py</span></div>
+      <div class="output"><span class="prompt">$ python coffee_pipeline.py</span>
+<span class="info">INFO</span> grinder: beans ready
+<span class="warning">WARN brewer: decaf detected</span>
+<span class="status">Brewing cup 6/100. Send help.</span></div>
+    </div>
+    <p class="note">Keep the logs. Update the status in place.</p>
+  </section>
+</div>
+<div class="footer"><div class="install">pip install outwrite</div><div class="url">github.com/ariel-m-s/outwrite</div></div>
+<p class="disclosure">Illustrative terminal output, not a benchmark. Progress logged on the left; supplied as status text on the right.</p>
+</html>
