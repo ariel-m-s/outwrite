@@ -1,4 +1,4 @@
-# Outwrite
+# Outwrite - Python logging with live status
 
 **Readable logs. Live status. Even across processes and threads.**
 
@@ -42,7 +42,7 @@ When the `with` block ends, `outwrite` finishes printing pending messages and re
 
 Status is text you provide, not an automatically calculated progress bar. Use it for imports, downloads, long-running checks, or whatever your script is doing now.
 
-## Running multiple processes or threads?
+## Logging across multiple processes and threads
 
 Bring their logs into the same console, too. `outwrite` handles the queue, listener, and cleanup for batch jobs, parallel downloads, and multi-stage pipelines. Just need logging? Set `show_status=False`.
 
@@ -92,6 +92,8 @@ python examples/multiprocessing_demo.py
 - Workers share one status line; the last update received is shown.
 
 Threads share the same setup, so there's no connection to pass around. Messages are displayed in queue-receipt order, not globally sorted by timestamp.
+
+For the design and trade-offs, see [Python multiprocessing logging with a live status line](https://github.com/ariel-m-s/outwrite/blob/main/docs/multiprocessing-logging.md).
 
 ## Options
 
