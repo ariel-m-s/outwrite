@@ -160,6 +160,7 @@ This example hides the time and source filename in logs and makes status green:
 
 ```python
 import logging
+import time
 
 import outwrite
 from rich.console import Console
@@ -181,6 +182,7 @@ with outwrite.configure_console(
 ):
     logger.info("Starting")
     outwrite.status.update("Simulation: step 1 of 100")
+    time.sleep(1)
     # Do your work here.
 ```
 
