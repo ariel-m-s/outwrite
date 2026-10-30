@@ -12,7 +12,7 @@ Running connection check
 
 Status is text you provide, not an automatically calculated progress bar.
 
-Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in alpha.
+Built on [Rich](https://github.com/Textualize/rich). Python 3.11+.
 
 ## Install
 
