@@ -52,6 +52,33 @@ Logs and status updates travel through a shared queue to a single listener in th
 
 Pass the connection returned by the main process to each child process and call `outwrite.configure_console(console_connection)` there before logging or updating status.
 
+```python
+import logging
+import multiprocessing as mp
+
+import outwrite
+
+logger = logging.getLogger("coffee")
+
+
+def brew(connection):
+    outwrite.configure_console(connection)
+    logger.info("Beans ready")
+    outwrite.status.update("Brewing coffee")
+
+
+if __name__ == "__main__":
+    context = mp.get_context("spawn")
+    with outwrite.configure_console(logger=logger, mp_context=context) as connection:
+        process = context.Process(target=brew, args=(connection,))
+        process.start()
+        process.join()
+        if process.exitcode != 0:
+            raise RuntimeError(f"Child process exited with code {process.exitcode}")
+```
+
+Save this as a Python file and run it, rather than pasting it into a REPL.
+
 The [multiprocessing demo](https://github.com/ariel-m-s/outwrite/blob/main/examples/multiprocessing_demo.py) shows the complete setup, including cleanup when interrupted with Ctrl+C.
 
 After installing `outwrite`, run it from a repository checkout:
