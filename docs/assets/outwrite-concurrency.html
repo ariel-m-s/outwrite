@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Many tasks. One conversation. - outwrite</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 1200px; height: 800px; padding: 48px; background: #101725; color: #edf2fa; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .eyebrow { color: #6de0d0; font: 600 18px Menlo, monospace; }
+  h1 { margin: 18px 0 12px; font-size: 58px; letter-spacing: -2px; }
+  .intro { margin: 0 0 34px; font-size: 23px; color: #bac5d8; }
+  .scene { display: flex; align-items: center; gap: 20px; }
+  .sources { width: 300px; flex-shrink: 0; }
+  .source { background: #202b3d; border: 1px solid #45536b; border-radius: 12px; padding: 18px; margin: 0 0 16px; }
+  .source:last-child { margin-bottom: 0; }
+  .source b { display: block; font-size: 20px; margin-bottom: 10px; }
+  .source code { font: 16px Menlo, monospace; color: #bac5d8; }
+  .queue { width: 124px; flex-shrink: 0; text-align: center; color: #6de0d0; font-size: 32px; }
+  .queue span { display: block; margin: 16px 0; font-size: 18px; line-height: 1.5; color: #bac5d8; }
+  .terminal { width: 640px; height: 356px; border: 1px solid #45536b; border-radius: 14px; background: #0a101b; overflow: hidden; }
+  .bar { background: #202b3d; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .bar code { color: #bac5d8; margin-left: 14px; font: 14px Menlo, monospace; }
+  pre { margin: 0; padding: 22px 18px; font: 17px/1.85 Menlo, monospace; }
+  .info { color: #89bbff; } .warning { color: #ffd18a; }
+  .note { margin: 30px 0 0; font-size: 23px; font-weight: 600; }
+  .detail { margin: 12px 0 0; font-size: 19px; line-height: 1.6; color: #bac5d8; }
+  .footer { margin-top: 32px; color: #93a2ba; font-size: 15px; }
+</style>
+<div class="eyebrow">outwrite / concurrent logging</div>
+<h1>Many tasks. One conversation.</h1>
+<p class="intro">Collect logs from processes or threads without wiring the plumbing yourself.</p>
+<div class="scene">
+  <div class="sources">
+    <div class="source"><b>Downloader</b><code>Fetching cat photos...</code></div>
+    <div class="source"><b>Resizer</b><code>Making cats smaller...</code></div>
+    <div class="source"><b>Uploader</b><code>Shipping the tiny cats...</code></div>
+  </div>
+  <div class="queue">&#8594;<span>Shared queue<br>Single listener</span>&#8594;</div>
+  <div class="terminal">
+    <div class="bar"><i class="dot" style="background:#ff6a68"></i><i class="dot" style="background:#eab85b"></i><i class="dot" style="background:#64cc93"></i><code>cat_pipeline.py</code></div>
+    <pre><span class="info">INFO</span> download: cat_01 fetched
+<span class="info">INFO</span> resize:   cat_01 resized
+<span class="info">INFO</span> download: cat_02 fetched
+<span class="info">INFO</span> upload:   cat_01 uploaded
+<span class="warning">WARN resize:   cat_02 too fluffy</span>
+<span class="info">INFO</span> download: cat_03 fetched</pre>
+  </div>
+</div>
+<p class="note">Concurrent work. Centralized output. Status optional.</p>
+<p class="detail">Threads share the setup. Child processes connect to the same queue.<br>Logs are handled one at a time in the main process.</p>
+<div class="footer">Illustrative output with task labels supplied by the app. Queue-receipt order, not global timestamp order.</div>
+</html>

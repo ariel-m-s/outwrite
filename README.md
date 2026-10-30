@@ -4,6 +4,8 @@ Keep your logs readable and your progress visible.
 
 `outwrite` brings logs from multiple processes or threads into one coordinated console, with a live **status line** showing what's happening now. Logs and status updates share one queue, keeping output readable without cluttering the log with progress messages.
 
+**Keep progress visible, not repetitive.** Useful for imports, downloads, and long-running checks:
+
 ![Illustration: a decaf warning surrounded by repeated brewing progress logs on the left; the same warning with one live "Brewing cup 6/100. Send help." status line on the right.](docs/assets/outwrite-comparison.png?v=97ea83f)
 
 Status is text you provide, not an automatically calculated progress bar.
@@ -40,11 +42,13 @@ with outwrite.configure_console(logger=logger):
 
 When the `with` block ends, `outwrite` finishes printing pending messages and removes the status line. Existing file handlers still receive logs, but not status.
 
-## Multiple processes
+## Logging from multiple processes or threads
 
-More cooks, one console. Logs and status updates travel through a shared queue to a single listener in the main process, rather than each process writing to the terminal on its own.
+**Concurrent work, centralized output.** Useful for batch processing, parallel downloads, and multi-stage pipelines, even without a status line. Use `show_status=False` when you only need coordinated logging.
 
-![Diagram: logs and status updates from the main process, process A, and process B flow into one shared queue, then a single listener renders logs above one live status line.](docs/assets/outwrite-flow.svg?v=97ea83f)
+![Illustration: downloader, resizer, and uploader tasks send cat-photo processing logs through a shared queue and single listener into one console, with no status line required.](docs/assets/outwrite-concurrency.png?v=1)
+
+Logs and status updates travel through a shared queue to a single listener in the main process, rather than each process writing to the terminal on its own.
 
 Pass the connection returned by the main process to each child process and call `outwrite.configure_console(console_connection)` there before logging or updating status.
 
