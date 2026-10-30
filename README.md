@@ -24,10 +24,8 @@ Built on [Rich](https://github.com/Textualize/rich). Python 3.11+. Currently in 
 ## Install
 
 ```sh
-python -m pip install outwrite==0.1.0a3
+pip install outwrite
 ```
-
-Outwrite is in alpha; the install command pins the version shown.
 
 ## Quick start
 
